@@ -7,6 +7,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Web.Http;
 
 namespace docvault_linkfunc
 {
@@ -24,13 +25,15 @@ namespace docvault_linkfunc
             {
                 return new BadRequestObjectResult((Object?)null);
             }
+            string? url = null;
             try
             {
-                string? url = await StorageHandler.GetURL(urlRequest.FileName);
+                url = await StorageHandler.GetURL(urlRequest.FileName);
             }
             catch (Exception e)
             {
                 log.LogError(e.ToString());
+                return new InternalServerErrorResult();
             }
             if (url is null)
             {
