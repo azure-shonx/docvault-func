@@ -24,8 +24,14 @@ namespace docvault_linkfunc
             {
                 return new BadRequestObjectResult((Object?)null);
             }
-
-            string? url = await StorageHandler.GetURL(urlRequest.FileName);
+            try
+            {
+                string? url = await StorageHandler.GetURL(urlRequest.FileName);
+            }
+            catch (Exception e)
+            {
+                log.LogError(e.ToString());
+            }
             if (url is null)
             {
                 return new NotFoundObjectResult((Object?)null);
