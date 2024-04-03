@@ -15,31 +15,64 @@ namespace docvault_linkfunc
     {
 
         private static readonly AzureStorageHandler StorageHandler = new AzureStorageHandler();
+        private static readonly AzureCosmosHandler CosmosHandler = new AzureCosmosHandler();
 
         [FunctionName("GetSASURL")]
         public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetSASURL")] HttpRequest req, ILogger log)
         {
-            URLRequest? urlRequest = await GetRequest(req);
-
-            if (urlRequest is null)
-            {
-                return new BadRequestObjectResult((Object?)null);
-            }
-            string? url = null;
             try
             {
+                URLRequest? urlRequest = await GetRequest(req);
+
+                if (urlRequest is null)
+                {
+                    return new BadRequestObjectResult((Object?)null);
+                }
+                URLReply? url = null;
+
+                URLReply? potential = await CosmosHandler.GetFile(urlRequest.FileName);
+                if (potential is not null)
+                {
+                    if (!(DateTimeOffset.UtcNow.CompareTo(potential.expires) < 0))
+                    {
+                        log.LogInformation("Cached response is expired.");
+                        await CosmosHandler.DeleteFile(potential);
+                    }
+                    else
+                    {
+                        log.LogInformation("Used cached response.");
+                        return new OkObjectResult(potential);
+                    }
+                }
+                else
+                {
+                    log.LogInformation("Potential is null.");
+                }
+                log.LogInformation("Generating URL...");
                 url = await StorageHandler.GetURL(urlRequest.FileName);
+
+                if (url is null)
+                {
+                    return new NotFoundObjectResult((Object?)null);
+                }
+                await CosmosHandler.SaveFile(url);
+                return new OkObjectResult(url);
             }
             catch (Exception e)
             {
-                log.LogError(e.ToString());
+                if (e.GetType().Equals(typeof(Microsoft.Azure.Cosmos.CosmosException)))
+                {
+                    if (((Microsoft.Azure.Cosmos.CosmosException)e).StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                    {
+                        log.LogError("Cannot contact CosmosDB.");
+                    }
+                }
+                else
+                {
+                    log.LogError(e.ToString());
+                }
                 return new InternalServerErrorResult();
             }
-            if (url is null)
-            {
-                return new NotFoundObjectResult((Object?)null);
-            }
-            return new OkObjectResult(new URLReply(urlRequest.FileName, url));
         }
 
         private static async Task<URLRequest?> GetRequest(HttpRequest req)

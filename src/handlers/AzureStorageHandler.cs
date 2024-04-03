@@ -1,5 +1,6 @@
 using Azure.Identity;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 
 public class AzureStorageHandler
@@ -16,15 +17,17 @@ public class AzureStorageHandler
         bcc = bsc.GetBlobContainerClient("documents");
     }
 
-    public async Task<string?> GetURL(string FileName)
+    public async Task<URLReply?> GetURL(string FileName)
     {
         BlobClient bc = bcc.GetBlobClient(FileName);
         if (!await bc.ExistsAsync())
         {
             return null;
         }
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset expires = DateTimeOffset.UtcNow.AddHours(6);
 
-        var userDelegationKey = await bsc.GetUserDelegationKeyAsync(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddHours(6));
+        UserDelegationKey userDelegationKey = await bsc.GetUserDelegationKeyAsync(now, expires);
 
         BlobSasBuilder sasBuilder = new BlobSasBuilder
         {
@@ -47,6 +50,6 @@ public class AzureStorageHandler
         Uri? uri = uriBuilder.ToUri();
         if (uri is null)
             return null;
-        return uri.ToString();
+        return new URLReply(FileName, uri.ToString(), expires);
     }
 }

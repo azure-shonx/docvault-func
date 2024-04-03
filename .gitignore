@@ -263,5 +263,6 @@ paket-files/
 __pycache__/
 *.pyc
 
-# build.bat
+# My Stuff
 build.bat
+test.txt
