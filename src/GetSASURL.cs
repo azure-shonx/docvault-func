@@ -23,34 +23,25 @@ namespace docvault_linkfunc
             try
             {
                 URLRequest? urlRequest = await GetRequest(req);
-
                 if (urlRequest is null)
                 {
                     return new BadRequestObjectResult((Object?)null);
                 }
-                URLReply? url = null;
 
-                URLReply? potential = await CosmosHandler.GetFile(urlRequest.FileName);
-                if (potential is not null)
+                URLReply? url = await CosmosHandler.GetFile(urlRequest.FileName);
+                if (url is not null)
                 {
-                    if (!(DateTimeOffset.UtcNow.CompareTo(potential.expires) < 0))
+                    if (!(DateTimeOffset.UtcNow.CompareTo(url.expires) < 0))
                     {
-                        log.LogInformation("Cached response is expired.");
-                        await CosmosHandler.DeleteFile(potential);
+                        await CosmosHandler.DeleteFile(url);
                     }
                     else
                     {
-                        log.LogInformation("Used cached response.");
-                        return new OkObjectResult(potential);
+                        return new OkObjectResult(url);
                     }
                 }
-                else
-                {
-                    log.LogInformation("Potential is null.");
-                }
-                log.LogInformation("Generating URL...");
-                url = await StorageHandler.GetURL(urlRequest.FileName);
 
+                url = await StorageHandler.GetURL(urlRequest.FileName);
                 if (url is null)
                 {
                     return new NotFoundObjectResult((Object?)null);
@@ -65,6 +56,7 @@ namespace docvault_linkfunc
                     if (((Microsoft.Azure.Cosmos.CosmosException)e).StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                     {
                         log.LogError("Cannot contact CosmosDB.");
+                        return new InternalServerErrorResult();
                     }
                 }
                 log.LogError(e.ToString());
