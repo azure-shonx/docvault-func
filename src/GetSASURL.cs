@@ -67,10 +67,7 @@ namespace docvault_linkfunc
                         log.LogError("Cannot contact CosmosDB.");
                     }
                 }
-                else
-                {
-                    log.LogError(e.ToString());
-                }
+                log.LogError(e.ToString());
                 return new InternalServerErrorResult();
             }
         }
