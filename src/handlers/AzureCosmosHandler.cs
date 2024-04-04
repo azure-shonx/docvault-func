@@ -3,12 +3,12 @@ using Microsoft.Azure.Cosmos;
 
 public class AzureCosmosHandler
 {
-
+    public static readonly AzureCosmosHandler INSTANCE = new AzureCosmosHandler();
     private CosmosClient Client;
     private Database Database;
     private Container Container;
 
-    public AzureCosmosHandler()
+    private AzureCosmosHandler()
     {
         Client = new CosmosClient("https://shonx-document-vault.documents.azure.com/", new DefaultAzureCredential());
         Database = Client.GetDatabase("documents");

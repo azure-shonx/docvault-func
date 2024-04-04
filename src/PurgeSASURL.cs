@@ -11,14 +11,14 @@ using System.Web.Http;
 
 namespace docvault_linkfunc
 {
-    public static class GetSASURL
+    public static class PurgeSASURL
     {
 
         private static readonly AzureStorageHandler StorageHandler = AzureStorageHandler.INSTANCE;
         private static readonly AzureCosmosHandler CosmosHandler = AzureCosmosHandler.INSTANCE;
 
-        [FunctionName("GetSASURL")]
-        public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetSASURL")] HttpRequest req, ILogger log)
+        [FunctionName("PurgeSASURL")]
+        public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "put", Route = "PurgeSASURL")] HttpRequest req, ILogger log)
         {
             try
             {
@@ -31,23 +31,13 @@ namespace docvault_linkfunc
                 URLReply? url = await CosmosHandler.GetFile(urlRequest.FileName);
                 if (url is not null)
                 {
-                    if (!(DateTimeOffset.UtcNow.CompareTo(url.expires) < 0))
-                    {
-                        await CosmosHandler.DeleteFile(url);
-                    }
-                    else
-                    {
-                        return new OkObjectResult(url);
-                    }
+                    await CosmosHandler.DeleteFile(url);
+                    return new OkObjectResult((Object?)null);
                 }
-
-                url = await StorageHandler.GetURL(urlRequest.FileName);
-                if (url is null)
+                else
                 {
                     return new NotFoundObjectResult((Object?)null);
                 }
-                await CosmosHandler.SaveFile(url);
-                return new OkObjectResult(url);
             }
             catch (Exception e)
             {

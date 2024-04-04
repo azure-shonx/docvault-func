@@ -5,11 +5,11 @@ using Azure.Storage.Sas;
 
 public class AzureStorageHandler
 {
-
+    public static readonly AzureStorageHandler INSTANCE = new AzureStorageHandler();
     private BlobServiceClient bsc;
     private BlobContainerClient bcc;
 
-    public AzureStorageHandler()
+    private AzureStorageHandler()
     {
         bsc = new BlobServiceClient(
                 new Uri("https://shonxdocvault.blob.core.windows.net"),
