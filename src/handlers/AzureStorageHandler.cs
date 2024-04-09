@@ -50,6 +50,7 @@ public class AzureStorageHandler
         Uri? uri = uriBuilder.ToUri();
         if (uri is null)
             return null;
-        return new URLReply(FileName, uri.ToString(), expires);
+        string url = uri.ToString().Replace("https://shonxdocvault.blob.core.windows.net", "https://documents.docvault.shonx.net");
+        return new URLReply(FileName, url, expires);
     }
 }
